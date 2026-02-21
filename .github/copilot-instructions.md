@@ -52,7 +52,7 @@ Each iteration: slightly better code, slightly clearer understanding.
 7. **Repeat**: Commit, then iterate
 
 ## Quality Gates
-- TypeScript strict
+- Type checking passes (strict mode where available)
 - Lint passes
 - Tests cover the change
 - Stable dependencies
