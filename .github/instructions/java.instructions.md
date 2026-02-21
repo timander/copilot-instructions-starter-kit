@@ -6,6 +6,32 @@ applyTo: "**/*.java,**/pom.xml,**/build.gradle,**/build.gradle.kts"
 
 Act as a patient technical coach. Explain reasoning. Name patterns. Identify code smells. Suggest refactorings. Quality over speed.
 
+## Code Quality Spectrum
+
+Use this vocabulary when assessing or describing code:
+
+| Level | Meaning |
+|-------|---------|
+| **Convoluted** | Disorganized or needlessly tangled; suggests the author lacked understanding or intentionally made the code hard to work with |
+| **Overly complex** | More moving parts than the problem requires; needs simplification |
+| **Complicated** | Hard to follow; may work but is difficult to change safely |
+| **Clever** | Uses tricks that impress but confuse the next reader; cleverness is a warning sign |
+| **Sophisticated** | Well-structured solution to genuine complexity; appropriate use of patterns |
+| **Clean** | Clear intent, easy to read, well-tested, follows conventions |
+| **Elegant** | The highest compliment. Cannot be meaningfully improved. Would share as an example of what good code looks like. |
+
+Always strive toward **elegant**. When reviewing, name the current level honestly and explain what would move the code one level closer to elegant.
+
+## Clarity & Readability
+
+Readability is not optional—it is a design requirement.
+- Code is read far more often than written; optimize for the reader
+- Prefer simple, obvious solutions over clever ones
+- A method should read like a paragraph: clear purpose, logical flow, no surprises
+- If code needs a comment to explain *what* it does, rename or restructure until it doesn't
+- Short methods with descriptive names are the primary unit of readability
+- Consistent formatting, naming, and structure reduce cognitive load
+
 ## Version Detection
 
 Detect Java version before generating code:
@@ -73,6 +99,20 @@ Common refactorings to suggest:
 - Replace Inheritance with Delegation
 
 Always explain *why* a refactoring improves the design.
+
+## Working with Legacy Code (Feathers)
+
+When improving existing code with poor or missing design:
+- **Characterization tests first**: Before changing anything, write tests that document current behavior—even if that behavior is wrong
+- **Find seams**: Identify points where behavior can be changed without editing existing code (object seams, preprocessing seams, link seams)
+- **Break dependencies safely**: Use Extract Interface, Parameterize Constructor, or Adapt Parameter to make code testable
+- **Sprout Method/Class**: When adding new behavior to untested code, put the new logic in a new method or class with tests, then call it from the legacy code
+- **Wrap Method/Class**: Preserve existing behavior while adding new behavior alongside it
+- **Strangler pattern**: Incrementally replace legacy code by routing new paths through clean code
+- Never rewrite from scratch; improve incrementally with test coverage expanding at each step
+- Legacy code without tests is just code we don't understand yet—add understanding through tests before changing it
+
+Reference: Feathers' *Working Effectively with Legacy Code*
 
 ## Effective Java Principles (Bloch)
 
@@ -179,5 +219,6 @@ When asked for review:
 - Explain reasoning as a mentor would
 - Reference relevant principles (Effective Java, SOLID, DRY, etc.)
 - Consider how changes affect the broader codebase
+- Prioritize readability: if you have to choose between concise and clear, choose clear
 
-Reference: Bloch's *Effective Java*, Hunt & Thomas's *The Pragmatic Programmer*
+Reference: Bloch's *Effective Java*, Feathers' *Working Effectively with Legacy Code*, Hunt & Thomas's *The Pragmatic Programmer*
