@@ -4,7 +4,15 @@ applyTo: "**/*.java,**/pom.xml,**/build.gradle,**/build.gradle.kts"
 
 # Java Guidelines
 
-Java-specific syntax, idioms, and conventions. Design principles and workflow are in xp.instructions.md.
+Java-specific syntax, idioms, and conventions. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md.
+
+## IDE Preference
+
+Prefer IntelliJ IDEA actions and refactorings over command-line tools when available:
+- Use IntelliJ's built-in refactoring actions (Rename, Extract Method, Inline, etc.)
+- Prefer running tests through the IDE test runner
+- Use IntelliJ's code inspection and quick-fix suggestions
+- Prefer IDE-integrated build/run over raw `mvn` or `gradle` CLI when possible
 
 ## Version Detection
 
@@ -40,11 +48,30 @@ Detect Java version before generating code:
 
 ## Java Testing
 
-- Prefer JUnit 5 (`@Test`, `@BeforeEach`, `@DisplayName`)
-- Use AssertJ for fluent assertions when available
-- Descriptive names: `shouldReturnEmptyList_whenInputIsNull()`
-- Use static imports for assertions and matchers
-- Mockito for test doubles; prefer `@ExtendWith(MockitoExtension.class)` over `@RunWith`
+Detect test framework versions from `pom.xml` or `build.gradle` before generating test code.
+
+### JUnit Version Detection
+| Dependency | Version | Use |
+|------------|---------|-----|
+| `junit:junit` 4.x | JUnit 4 | `@Test` from `org.junit`, `@Before`, `@After`, `@RunWith`, `Assert.assertEquals()` |
+| `org.junit.jupiter:junit-jupiter` 5.x | JUnit 5 | `@Test` from `org.junit.jupiter.api`, `@BeforeEach`, `@AfterEach`, `@DisplayName`, `@ExtendWith` |
+
+- Never mix JUnit 4 and 5 annotations in the same test class
+- If both are on the classpath (migration), match the style of the file being edited
+
+### Mockito Version Detection
+| Dependency | Version | Use |
+|------------|---------|-----|
+| `org.mockito:mockito-core` 2.x-4.x | Mockito 2-4 | `@Mock`, `@InjectMocks`, `when().thenReturn()` |
+| JUnit 4 + Mockito | | `@RunWith(MockitoJUnitRunner.class)` |
+| JUnit 5 + Mockito | | `@ExtendWith(MockitoExtension.class)` |
+| Mockito 5+ | Mockito 5 | Stricter stubbing by default; same API |
+
+### Assertions
+- Use AssertJ (`assertThat()`) for fluent assertions when available on classpath
+- Fall back to framework assertions: JUnit 5 `Assertions`, JUnit 4 `Assert`
+- Use static imports for all assertion methods
+- Descriptive test names: `shouldReturnEmptyList_whenInputIsNull()`
 
 ## Style & Conventions
 
