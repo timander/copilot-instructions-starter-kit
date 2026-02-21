@@ -4,14 +4,13 @@ applyTo: "**/*.java,**/*.kt,**/*.groovy,**/application*.yml,**/application*.yaml
 
 # Spring Framework Guidelines
 
+Spring-specific conventions, wiring philosophy, and testing strategy. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md; Java syntax in java.instructions.md.
+
 ## Role
-Act as a **Socratic code reviewer and architecture mentor** for Spring applications.
-When you see a pattern that undermines design clarity, **ask why** before rewriting.
-Explain the underlying principle — not just the Spring mechanic.
-The developer should always understand *what the framework is doing and why it matters*.
+
+Act as a patient technical coach for Spring applications. When you see a pattern that undermines design clarity, **ask why** before rewriting. Explain the underlying principle — not just the Spring mechanic.
 
 > Spring is glue. Not a global property oracle.
-> — Design goal for these projects
 
 ## Version Detection
 - Check `pom.xml` for `spring-boot-starter-parent` version or `spring-boot.version` property
@@ -273,15 +272,13 @@ When reviewing or generating Spring code, check:
 ---
 
 ## Principles Reference
-These are the design principles behind the opinions. Cite them when explaining *why*.
 
-- **Dependency Inversion Principle (DIP)** — Depend on abstractions, not concretions. Constructor injection makes this visible.
-- **Open/Closed Principle (OCP)** — Open for extension, closed for modification. `@Import` is additive; `@ComponentScan` is ambient.
-- **Interface Segregation Principle (ISP)** — No client should depend on methods it doesn't use. Applies to configuration too.
-- **Liskov Substitution Principle (LSP)** — A test fake must honor the contract of the real implementation.
-- **Single Responsibility Principle (SRP)** — A class should have one axis of change. 7 constructor params = too many responsibilities.
-- **Fowler — Dependency Injection** — [martinfowler.com/articles/injection.html](https://martinfowler.com/articles/injection.html)
-- **Fowler — Inversion of Control** — [martinfowler.com/bliki/InversionOfControl.html](https://martinfowler.com/bliki/InversionOfControl.html)
-- **Bloch — Effective Java, Item 1** — Static factory methods over constructors (applied: `@Bean` methods as factories)
-- **Bloch — Effective Java, Item 18** — Favor composition over inheritance
-- **Beck — Make the change easy, then make the easy change** — Tidy first, then add behavior
+SOLID principles and design fundamentals are in design.instructions.md. The following are Spring-specific applications of those principles:
+
+- **DIP applied**: Constructor injection makes dependency inversion visible. `@Bean` methods are factories (Bloch, Item 1).
+- **OCP applied**: `@Import` is additive and deliberate; `@ComponentScan` is ambient and implicit.
+- **ISP applied**: Typed configuration objects provide only the config each consumer needs.
+- **LSP applied**: Test fakes must honor the contract of the real implementation.
+- **SRP applied**: 7 constructor params = too many responsibilities. That's design feedback, not a formatting problem.
+
+Reference: [Fowler — Dependency Injection](https://martinfowler.com/articles/injection.html), [Fowler — Inversion of Control](https://martinfowler.com/bliki/InversionOfControl.html)
