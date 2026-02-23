@@ -39,13 +39,37 @@ rm -rf /tmp/copilot-starter
 │
 ├── instructions/                        # Automatic — activated by file type
 │   ├── design.instructions.md           # Code quality, simplicity, SOLID, code smells, patterns
-│   ├── xp.instructions.md              # TDD workflow, testing discipline
+│   ├── xp.instructions.md               # TDD workflow, testing discipline
 │   ├── refactoring.instructions.md      # Refactoring catalog, legacy code (Feathers)
 │   ├── code-review.instructions.md      # Code review, PR review, expert panel mode
-│   ├── java.instructions.md             # Java syntax, version detection, Effective Java
+│   ├── java.instructions.md             # Java syntax, version detection, Effective Java, code-quality tooling (PMD, Checkstyle, JaCoCo)
+│   ├── python.instructions.md           # Idiomatic Python, pytest, UV, code-quality tooling (ruff, mypy, pytest-cov)
+│   ├── ruby.instructions.md             # Idiomatic Ruby, Bundler, code-quality tooling (RuboCop, SimpleCov, Sorbet)
+│   ├── kotlin.instructions.md           # Idiomatic Kotlin, version detection, code-quality tooling (detekt, ktlint, Kover)
+│   ├── scala.instructions.md            # Idiomatic Scala, Scala 2/3, code-quality tooling (scalafmt, scalafix, WartRemover, scoverage)
 │   ├── typescript.instructions.md       # TypeScript strict, types, testing frameworks
 │   ├── spring.instructions.md           # Spring wiring, config, testing philosophy
 │   └── astro.instructions.md            # Astro/TinaCMS project-specific rules
+## Code Quality Tooling (Opt-In)
+
+All language instructions now include an **opt-in code-quality tooling section**. When you request code review, expert panel, or static analysis, Copilot will prompt you to add tools (linters, coverage, static analysis) that generate reports for richer review. These tools are never required and are configured to be non-breaking (report-only).
+
+| Language | Tools Prompted |
+|----------|----------------|
+| Java     | PMD, Checkstyle/Spotless, JaCoCo, SpotBugs |
+| Python   | ruff, mypy, pytest-cov |
+| Ruby     | RuboCop, SimpleCov, Sorbet |
+| Kotlin   | detekt, ktlint, Kover |
+| Scala    | scalafmt, scalafix, WartRemover, scoverage |
+
+Reports are used for code review and expert panel modes, never as build gates.
+
+---
+## Copilot Instruction: Always Update README
+
+Whenever you add, remove, or change an instruction file in `.github/instructions/`, **always update this README** to reflect the new language, stack, or tooling. The README is the source of truth for what instructions exist and what they cover.
+
+If you forget, prompt yourself to update the README before considering the task complete.
 │
 ├── agents/                              # On-demand — invoke with @agentname
 │   ├── builder.agent.md                 # @builder — TDD feature building
