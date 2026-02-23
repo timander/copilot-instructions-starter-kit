@@ -131,4 +131,79 @@ Respect project's configured tools:
 
 Always ensure generated code compiles and passes existing checks.
 
+## Code Quality Tooling (Optional)
+
+These tools are **not required** but can significantly enhance code review and expert panel analysis by producing actionable reports. Adding them is an opt-in decision — when prompted, offer to configure them.
+
+When a user asks for code review, expert panel review, or static analysis insights, suggest:
+*"This project doesn't have static analysis or coverage reporting configured. Would you like me to add PMD, Checkstyle (or Spotless), and JaCoCo? They produce reports that improve review quality without breaking the build."*
+
+### Recommended Tools
+| Tool | Purpose | Config |
+|------|---------|--------|
+| **PMD** | Static analysis (anti-patterns, complexity, dead code) | Maven/Gradle plugin + ruleset XML |
+| **Checkstyle** | Style enforcement | Maven/Gradle plugin + `checkstyle.xml` |
+| **Spotless** | Formatting (alternative to Checkstyle for style) | Gradle/Maven plugin, zero-config with google-java-format |
+| **JaCoCo** | Test coverage reporting | Maven/Gradle plugin |
+| **SpotBugs** | Bug pattern detection (successor to FindBugs) | Maven/Gradle plugin |
+
+### Configuration Principles
+- **Non-breaking**: tools should report, not fail the build; use `ignoreFailures = true` (Gradle) or `<failOnViolation>false</failOnViolation>` (Maven)
+- Reports feed into code review: coverage gaps inform test suggestions, PMD findings surface design issues, Checkstyle violations flag consistency problems
+- Start permissive, tighten incrementally — don't dump hundreds of violations on an existing codebase
+- Generate HTML/XML reports for review; configure report paths consistently
+
+### Example Maven Configuration
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-pmd-plugin</artifactId>
+    <configuration>
+        <failOnViolation>false</failOnViolation>
+        <printFailingErrors>true</printFailingErrors>
+    </configuration>
+</plugin>
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals><goal>prepare-agent</goal></goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Example Gradle Configuration
+
+```groovy
+plugins {
+    id 'pmd'
+    id 'checkstyle'
+    id 'jacoco'
+}
+
+pmd {
+    ignoreFailures = true
+    rulesMinimumPriority = 3
+}
+
+checkstyle {
+    ignoreFailures = true
+}
+
+jacocoTestReport {
+    reports {
+        html.required = true
+        xml.required = true
+    }
+}
+```
+
 Reference: Bloch's *Effective Java*, Langr's *Pragmatic Unit Testing in Java with JUnit*
