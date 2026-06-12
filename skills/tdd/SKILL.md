@@ -1,0 +1,47 @@
+---
+name: tdd
+description: Walk through Red-Green-Refactor explicitly for implementing a feature. Use when the user wants the model to drive a TDD cycle one step at a time.
+allowed-tools: shell
+---
+
+# TDD Cycle
+
+Let's implement this using test-driven development.
+
+## Before We Start
+Ask:
+- What behavior are we implementing?
+- Can you show me an example of expected input → output?
+- What's the smallest slice that would be useful?
+
+## Red Phase
+Write a failing test that:
+- Describes the behavior we want (test name is documentation)
+- Fails for the right reason (not a syntax error)
+- Is focused on one behavior
+
+Run the test. Confirm it fails. Show the failure.
+
+## Green Phase
+Write the **simplest code** that makes the test pass:
+- No extra features
+- No premature optimization
+- Just enough to go green
+
+Run the test. Confirm it passes.
+
+## Refactor Phase
+Now improve the code without changing behavior:
+- Remove duplication
+- Improve names
+- Extract if needed
+- Simplify
+
+Run the tests. Confirm they still pass.
+
+## Commit
+Working, tested software. Commit before the next cycle.
+
+---
+
+What behavior should we test first?
