@@ -1,0 +1,411 @@
+#!/usr/bin/env bash
+#
+# copilot-kit — manage the user-level GitHub Copilot CLI kit
+#
+# Commands:
+#   list [agents|skills|instructions|all]   List items (default: all)
+#   activate <name>                         Symlink an item so Copilot CLI sees it
+#   deactivate <name>                       Remove the activation symlink
+#   discard <name>                          Permanently delete the source from the kit
+#   add <path> [--type=...]                 Bring an artifact into the kit
+#   doctor                                  Verify install integrity
+#   update                                  git pull the kit (preserves your additions)
+#   which <name>                            Show source and activation paths
+#   help                                    Show this message
+
+set -euo pipefail
+
+KIT_DIR="${KIT_DIR:-$HOME/.copilot-kit}"
+COPILOT_DIR="$HOME/.copilot"
+
+# --- helpers ------------------------------------------------------------------
+
+c_dim()   { printf "\033[2m%s\033[0m" "$*"; }
+c_bold()  { printf "\033[1m%s\033[0m" "$*"; }
+c_red()   { printf "\033[31m%s\033[0m" "$*"; }
+c_green() { printf "\033[32m%s\033[0m" "$*"; }
+c_yellow(){ printf "\033[33m%s\033[0m" "$*"; }
+fail()    { printf "✗ %s\n" "$*" >&2; exit 1; }
+ok()      { printf "✓ %s\n" "$*"; }
+note()    { printf "→ %s\n" "$*"; }
+
+require_kit() {
+  [[ -d "${KIT_DIR}" ]] || fail "kit not found at ${KIT_DIR}. Run install.sh first."
+}
+
+# Classify an item name into its type by looking at the kit's source dirs.
+# Echoes one of: agent | skill | instruction | unknown
+classify() {
+  local name="$1"
+  if [[ -f "${KIT_DIR}/agents/${name}.agent.md" ]]; then echo agent; return; fi
+  if [[ -d "${KIT_DIR}/skills/${name}" ]]; then echo skill; return; fi
+  if [[ -f "${KIT_DIR}/.github/instructions/${name}.instructions.md" ]]; then echo instruction; return; fi
+  if [[ -f "${KIT_DIR}/.github/instructions.disabled/${name}.instructions.md" ]]; then echo instruction; return; fi
+  echo unknown
+}
+
+# Return 0 if active, 1 if not
+is_active() {
+  local name="$1" type="$2"
+  case "${type}" in
+    agent)       [[ -L "${COPILOT_DIR}/agents/${name}.agent.md" ]] ;;
+    skill)       [[ -L "${COPILOT_DIR}/skills/${name}" ]] ;;
+    instruction) [[ -f "${KIT_DIR}/.github/instructions/${name}.instructions.md" ]] ;;
+    *) return 1 ;;
+  esac
+}
+
+# --- commands -----------------------------------------------------------------
+
+cmd_list() {
+  require_kit
+  local filter="${1:-all}"
+
+  if [[ "${filter}" == "all" || "${filter}" == "agents" ]]; then
+    printf "%s\n" "$(c_bold "Agents (${KIT_DIR}/agents/)")"
+    if [[ -d "${KIT_DIR}/agents" ]]; then
+      shopt -s nullglob
+      for f in "${KIT_DIR}/agents"/*.agent.md; do
+        local name; name="$(basename "${f}" .agent.md)"
+        if is_active "${name}" agent; then
+          printf "  %s %s\n" "$(c_green '[active]  ')" "${name}"
+        else
+          printf "  %s %s\n" "$(c_dim '[inactive]')" "${name}"
+        fi
+      done
+      shopt -u nullglob
+    fi
+    echo
+  fi
+
+  if [[ "${filter}" == "all" || "${filter}" == "skills" ]]; then
+    printf "%s\n" "$(c_bold "Skills (${KIT_DIR}/skills/)")"
+    if [[ -d "${KIT_DIR}/skills" ]]; then
+      shopt -s nullglob
+      for d in "${KIT_DIR}/skills"/*/; do
+        local name; name="$(basename "${d}")"
+        if is_active "${name}" skill; then
+          printf "  %s %s\n" "$(c_green '[active]  ')" "${name}"
+        else
+          printf "  %s %s\n" "$(c_dim '[inactive]')" "${name}"
+        fi
+      done
+      shopt -u nullglob
+    fi
+    echo
+  fi
+
+  if [[ "${filter}" == "all" || "${filter}" == "instructions" ]]; then
+    printf "%s\n" "$(c_bold "Instructions (loaded via COPILOT_CUSTOM_INSTRUCTIONS_DIRS)")"
+    shopt -s nullglob
+    for f in "${KIT_DIR}/.github/instructions"/*.instructions.md; do
+      local name; name="$(basename "${f}" .instructions.md)"
+      printf "  %s %s\n" "$(c_green '[active]  ')" "${name}"
+    done
+    for f in "${KIT_DIR}/.github/instructions.disabled"/*.instructions.md; do
+      local name; name="$(basename "${f}" .instructions.md)"
+      printf "  %s %s\n" "$(c_dim '[inactive]')" "${name}"
+    done
+    shopt -u nullglob
+    echo
+  fi
+}
+
+cmd_activate() {
+  require_kit
+  local name="${1:?usage: copilot-kit activate <name>}"
+  local type; type="$(classify "${name}")"
+
+  case "${type}" in
+    agent)
+      mkdir -p "${COPILOT_DIR}/agents"
+      local src="${KIT_DIR}/agents/${name}.agent.md"
+      local dst="${COPILOT_DIR}/agents/${name}.agent.md"
+      if [[ -L "${dst}" ]]; then
+        ok "agent '${name}' already active"
+      elif [[ -e "${dst}" ]]; then
+        fail "${dst} exists and is not a symlink — refusing to overwrite"
+      else
+        ln -s "${src}" "${dst}"
+        ok "activated agent: ${name}"
+      fi
+      ;;
+    skill)
+      mkdir -p "${COPILOT_DIR}/skills"
+      local src="${KIT_DIR}/skills/${name}"
+      local dst="${COPILOT_DIR}/skills/${name}"
+      if [[ -L "${dst}" ]]; then
+        ok "skill '${name}' already active"
+      elif [[ -e "${dst}" ]]; then
+        fail "${dst} exists and is not a symlink — refusing to overwrite"
+      else
+        ln -s "${src}" "${dst}"
+        ok "activated skill: ${name}"
+      fi
+      ;;
+    instruction)
+      local disabled="${KIT_DIR}/.github/instructions.disabled/${name}.instructions.md"
+      local active="${KIT_DIR}/.github/instructions/${name}.instructions.md"
+      if [[ -f "${active}" ]]; then
+        ok "instruction '${name}' already active"
+      elif [[ -f "${disabled}" ]]; then
+        mkdir -p "${KIT_DIR}/.github/instructions"
+        mv "${disabled}" "${active}"
+        ok "activated instruction: ${name}"
+      else
+        fail "instruction '${name}' not found"
+      fi
+      ;;
+    *)
+      fail "unknown item: ${name}"
+      ;;
+  esac
+}
+
+cmd_deactivate() {
+  require_kit
+  local name="${1:?usage: copilot-kit deactivate <name>}"
+  local type; type="$(classify "${name}")"
+
+  case "${type}" in
+    agent)
+      local dst="${COPILOT_DIR}/agents/${name}.agent.md"
+      if [[ -L "${dst}" ]]; then
+        rm "${dst}"
+        ok "deactivated agent: ${name}"
+      else
+        ok "agent '${name}' was not active"
+      fi
+      ;;
+    skill)
+      local dst="${COPILOT_DIR}/skills/${name}"
+      if [[ -L "${dst}" ]]; then
+        rm "${dst}"
+        ok "deactivated skill: ${name}"
+      else
+        ok "skill '${name}' was not active"
+      fi
+      ;;
+    instruction)
+      local active="${KIT_DIR}/.github/instructions/${name}.instructions.md"
+      local disabled="${KIT_DIR}/.github/instructions.disabled/${name}.instructions.md"
+      if [[ -f "${active}" ]]; then
+        mkdir -p "${KIT_DIR}/.github/instructions.disabled"
+        mv "${active}" "${disabled}"
+        ok "deactivated instruction: ${name}"
+      else
+        ok "instruction '${name}' was not active"
+      fi
+      ;;
+    *)
+      fail "unknown item: ${name}"
+      ;;
+  esac
+}
+
+cmd_discard() {
+  require_kit
+  local name="${1:?usage: copilot-kit discard <name>}"
+  local type; type="$(classify "${name}")"
+
+  [[ "${type}" == "unknown" ]] && fail "unknown item: ${name}"
+
+  printf "%s permanently delete %s '%s' from the kit? [y/N] " "$(c_yellow 'WARN:')" "${type}" "${name}"
+  read -r answer
+  [[ "${answer:-N}" =~ ^[Yy]$ ]] || { note "aborted"; return; }
+
+  cmd_deactivate "${name}" || true
+
+  case "${type}" in
+    agent)       rm -f "${KIT_DIR}/agents/${name}.agent.md" ;;
+    skill)       rm -rf "${KIT_DIR}/skills/${name}" ;;
+    instruction) rm -f "${KIT_DIR}/.github/instructions/${name}.instructions.md" \
+                       "${KIT_DIR}/.github/instructions.disabled/${name}.instructions.md" ;;
+  esac
+  ok "discarded ${type}: ${name}"
+}
+
+cmd_add() {
+  require_kit
+  local src="${1:?usage: copilot-kit add <path> [--type=agent|skill|instruction]}"
+  local type=""
+
+  shift || true
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --type=*) type="${1#--type=}" ;;
+      *) fail "unknown flag: $1" ;;
+    esac
+    shift
+  done
+
+  [[ -e "${src}" ]] || fail "source not found: ${src}"
+
+  # Infer type from filename if not given
+  if [[ -z "${type}" ]]; then
+    case "$(basename "${src}")" in
+      *.agent.md)        type="agent" ;;
+      *.instructions.md) type="instruction" ;;
+      SKILL.md)          type="skill" ;;
+      *) [[ -d "${src}" && -f "${src}/SKILL.md" ]] && type="skill" || fail "cannot infer type; pass --type=" ;;
+    esac
+  fi
+
+  case "${type}" in
+    agent)
+      local name; name="$(basename "${src}" .agent.md)"
+      cp "${src}" "${KIT_DIR}/agents/${name}.agent.md"
+      ok "added agent: ${name} (run 'copilot-kit activate ${name}' to enable)"
+      ;;
+    skill)
+      local skill_dir
+      if [[ -d "${src}" ]]; then
+        skill_dir="${src}"
+      else
+        skill_dir="$(dirname "${src}")"
+      fi
+      local name; name="$(basename "${skill_dir}")"
+      mkdir -p "${KIT_DIR}/skills/${name}"
+      cp -r "${skill_dir}/." "${KIT_DIR}/skills/${name}/"
+      ok "added skill: ${name} (run 'copilot-kit activate ${name}' to enable)"
+      ;;
+    instruction)
+      local name; name="$(basename "${src}" .instructions.md)"
+      mkdir -p "${KIT_DIR}/.github/instructions"
+      cp "${src}" "${KIT_DIR}/.github/instructions/${name}.instructions.md"
+      ok "added instruction: ${name} (active by default)"
+      ;;
+    *)
+      fail "unknown type: ${type}"
+      ;;
+  esac
+}
+
+cmd_doctor() {
+  require_kit
+  local issues=0
+
+  printf "%s\n" "$(c_bold 'Copilot Kit Doctor')"
+  echo
+
+  # Env var
+  if [[ -n "${COPILOT_CUSTOM_INSTRUCTIONS_DIRS:-}" ]] && [[ ":${COPILOT_CUSTOM_INSTRUCTIONS_DIRS}:" == *":${KIT_DIR}:"* ]]; then
+    ok "COPILOT_CUSTOM_INSTRUCTIONS_DIRS includes ${KIT_DIR}"
+  else
+    printf "%s COPILOT_CUSTOM_INSTRUCTIONS_DIRS does not include %s\n" "$(c_red '✗')" "${KIT_DIR}"
+    printf "  Did you 'source ${KIT_DIR}/env' from your shell profile?\n"
+    issues=$((issues+1))
+  fi
+
+  # PATH
+  if [[ ":${PATH}:" == *":${KIT_DIR}/bin:"* ]]; then
+    ok "${KIT_DIR}/bin is on PATH"
+  else
+    printf "%s %s/bin is not on PATH\n" "$(c_red '✗')" "${KIT_DIR}"
+    issues=$((issues+1))
+  fi
+
+  # Symlinks
+  local link="${COPILOT_DIR}/copilot-instructions.md"
+  if [[ -L "${link}" && "$(readlink "${link}")" == "${KIT_DIR}/copilot-instructions.md" ]]; then
+    ok "${link} → kit's copilot-instructions.md"
+  else
+    printf "%s ${link} is missing or not pointing at the kit\n" "$(c_red '✗')"
+    issues=$((issues+1))
+  fi
+
+  # Copilot CLI present?
+  if command -v copilot >/dev/null 2>&1; then
+    ok "copilot CLI found ($(command -v copilot))"
+  elif command -v gh >/dev/null 2>&1 && gh extension list 2>/dev/null | grep -q copilot; then
+    ok "gh copilot extension installed"
+  else
+    printf "%s no copilot CLI detected (looked for 'copilot' and 'gh copilot')\n" "$(c_yellow '⚠')"
+  fi
+
+  echo
+  if [[ ${issues} -eq 0 ]]; then
+    ok "all healthy"
+  else
+    printf "%s %d issue(s) above\n" "$(c_red '✗')" "${issues}"
+    return 1
+  fi
+}
+
+cmd_update() {
+  require_kit
+  [[ -d "${KIT_DIR}/.git" ]] || fail "${KIT_DIR} is not a git repo; can't update"
+  ( cd "${KIT_DIR}" && git pull --ff-only )
+  ok "kit updated"
+}
+
+cmd_which() {
+  require_kit
+  local name="${1:?usage: copilot-kit which <name>}"
+  local type; type="$(classify "${name}")"
+
+  case "${type}" in
+    agent)
+      echo "type:    agent"
+      echo "source:  ${KIT_DIR}/agents/${name}.agent.md"
+      local dst="${COPILOT_DIR}/agents/${name}.agent.md"
+      [[ -L "${dst}" ]] && echo "active:  ${dst}" || echo "active:  (not activated)"
+      ;;
+    skill)
+      echo "type:    skill"
+      echo "source:  ${KIT_DIR}/skills/${name}/"
+      local dst="${COPILOT_DIR}/skills/${name}"
+      [[ -L "${dst}" ]] && echo "active:  ${dst}" || echo "active:  (not activated)"
+      ;;
+    instruction)
+      echo "type:    instruction"
+      if [[ -f "${KIT_DIR}/.github/instructions/${name}.instructions.md" ]]; then
+        echo "source:  ${KIT_DIR}/.github/instructions/${name}.instructions.md"
+        echo "active:  yes (loaded via COPILOT_CUSTOM_INSTRUCTIONS_DIRS)"
+      else
+        echo "source:  ${KIT_DIR}/.github/instructions.disabled/${name}.instructions.md"
+        echo "active:  no (in instructions.disabled/)"
+      fi
+      ;;
+    *)
+      fail "unknown item: ${name}"
+      ;;
+  esac
+}
+
+cmd_help() {
+  cat <<'EOH'
+copilot-kit — manage the user-level GitHub Copilot CLI kit
+
+Usage: copilot-kit <command> [args]
+
+Commands:
+  list [agents|skills|instructions|all]   List items with active/inactive state
+  activate <name>                         Activate an item for Copilot CLI
+  deactivate <name>                       Deactivate (file stays in kit)
+  discard <name>                          Permanently delete from the kit
+  add <path> [--type=...]                 Bring a new artifact into the kit
+  doctor                                  Verify install integrity
+  update                                  git pull the kit
+  which <name>                            Show source and activation paths
+  help                                    This message
+EOH
+}
+
+# --- dispatch -----------------------------------------------------------------
+
+cmd="${1:-help}"
+shift || true
+
+case "${cmd}" in
+  list)       cmd_list "$@" ;;
+  activate)   cmd_activate "$@" ;;
+  deactivate) cmd_deactivate "$@" ;;
+  discard)    cmd_discard "$@" ;;
+  add)        cmd_add "$@" ;;
+  doctor)     cmd_doctor "$@" ;;
+  update)     cmd_update "$@" ;;
+  which)      cmd_which "$@" ;;
+  help|-h|--help) cmd_help ;;
+  *) fail "unknown command: ${cmd} (try 'copilot-kit help')" ;;
+esac
