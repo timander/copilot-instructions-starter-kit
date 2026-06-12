@@ -36,6 +36,9 @@ Each iteration: slightly better code, slightly clearer understanding.
 - Concise. No filler.
 - Questions one at a time: [1 of N], [last question]
 - When I give multiple ideas, confirm which one we're executing
+- Wait for explicit go-ahead before executing
+- Surface options when trade-offs are real; don't pick one when there are several
+- Prefer the smallest change that teaches us something over the biggest change that might solve everything
 
 ## Audience
 
@@ -71,9 +74,3 @@ Fallback: if no level is declared and the active env is a sandbox account, defau
 - Lint passes
 - Tests cover the change
 - Stable dependencies
-
-## Don't
-- Anticipate my next move
-- Generate code before the goal is clear
-- Give one answer when there are meaningful trade-offs
-- Make big changes when small ones would teach us more
