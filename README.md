@@ -92,7 +92,8 @@ A typical Spring Java turn went from ~11,300 tokens of background context to ~5,
 │
 └── chatmodes/                           # Picked from the chat mode dropdown
     ├── build.chatmode.md                # Lean into TDD rhythm when adding new behavior
-    ├── fix.chatmode.md                  # Lean into diagnose-before-prescribe when something is broken
+    ├── diagnose.chatmode.md             # Sustained investigation; read-leaning (no edit tools)
+    ├── fix.chatmode.md                  # Pinpoint root cause then apply a surgical fix
     └── refactor.chatmode.md             # Lean into small safe moves when improving design
 ```
 
@@ -143,8 +144,11 @@ Pick a chat mode from the dropdown when you want to **lean into a particular rhy
 | Chat mode | Lean into when |
 |---|---|
 | `build` | You're adding new behavior and want a TDD-flavored rhythm |
-| `fix` | Something is broken and you want diagnose-before-prescribe discipline |
+| `diagnose` | Sustained investigation; you expect more than a couple of turns of hunting before any code change. Read-leaning — no `editFiles` in its tools |
+| `fix` | The symptom and likely cause are clear within a turn or two; you want surgical change with verification |
 | `refactor` | You're improving existing code without changing behavior |
+
+The `diagnose` ↔ `fix` pair is the deliberate split: `diagnose` keeps the model out of edit mode while you hunt the root cause; switch to `fix` once it's pinpointed. Both chat modes explicitly recommend the handoff so the model knows the other exists.
 
 ### Chat mode vs Prompt: Choosing
 
@@ -152,8 +156,9 @@ Pick a chat mode from the dropdown when you want to **lean into a particular rhy
 |---|---|---|
 | "Build this feature for me" | `build` chat mode | Suggests TDD rhythm; you stay in the same conversation |
 | "Let's build this together step by step" | `/tdd` prompt | Loads the explicit Red-Green-Refactor protocol on demand |
-| "Fix this bug" | `fix` chat mode | Suggests diagnose-first while keeping all capabilities |
-| "Help me understand why this is broken" | `/diagnose` prompt | Loads the systematic diagnosis script you drive |
+| "Fix this bug" | `fix` chat mode | Pinpoint then surgical change; good for short hunts |
+| "Why does this happen?" / sustained hunt | `diagnose` chat mode | Read-leaning investigation; no edit tools |
+| "Help me understand why this is broken" | `/diagnose` prompt | One-shot diagnosis script you drive |
 | "Clean up this code" | `refactor` chat mode | Suggests small safe moves and tidy-first |
 | "Should I refactor this?" | `/challenge` or `/options` prompt | Helps you decide before any action |
 
