@@ -4,8 +4,6 @@ applyTo: "**/*.scala,**/*.sc,**/build.sbt,**/project/*.scala,**/project/*.sbt"
 
 # Scala Guidelines
 
-Scala-specific syntax, idioms, and conventions. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md.
-
 ## IDE Preference
 
 Prefer IntelliJ IDEA with Scala plugin actions and refactorings when available:
@@ -119,47 +117,6 @@ When `build.sbt` is present:
 - Use `%%` for Scala-version-specific dependencies, `%` for Java
 - Use `ThisBuild / scalaVersion` for shared settings
 
-## Code Quality Tooling (Optional)
-
-These tools are **not required** but can significantly enhance code review and expert panel analysis by producing actionable reports. Adding them is an opt-in decision — when prompted, offer to configure them.
-
-When a user asks for code review, expert panel review, or static analysis insights, suggest:
-*"This project doesn't have static analysis or coverage reporting configured. Would you like me to add scalafmt, scalafix, WartRemover, and sbt-scoverage? They produce reports that improve review quality without breaking the build."*
-
-### Recommended Tools
-| Tool | Purpose | Config |
-|------|---------|--------|
-| **scalafmt** | Code formatting | `.scalafmt.conf` |
-| **scalafix** | Linting + automated refactoring | `.scalafix.conf`, sbt plugin |
-| **WartRemover** | Static analysis (catches common pitfalls) | sbt plugin config |
-| **sbt-scoverage** | Test coverage reporting | sbt plugin `org.scoverage` |
-
-### Configuration Principles
-- **Non-breaking**: tools should report, not fail the build; use `wartremoverWarnings` (not `wartremoverErrors`)
-- Reports feed into code review: coverage gaps inform test suggestions, WartRemover findings surface code smells, scalafix flags deprecated patterns
-- Start permissive, tighten incrementally — disable noisy rules initially
-- scalafmt: use `runner.dialect` matching the project's Scala version
-
-### Example Configurations
-
-```scala
-// project/plugins.sbt
-addSbtPlugin("org.scalameta"  % "sbt-scalafmt"   % "2.5.+")
-addSbtPlugin("ch.epfl.scala"  % "sbt-scalafix"   % "0.12.+")
-addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.1.+")
-addSbtPlugin("org.scoverage"  % "sbt-scoverage"  % "2.1.+")
-```
-
-```hocon
-# .scalafmt.conf
-version = "3.8.0"
-runner.dialect = scala3  # or scala213, match project
-maxColumn = 120
-```
-
-```scala
-// build.sbt — WartRemover as warnings only
-wartremoverWarnings ++= Warts.unsafe  // warn, don't fail
-```
+For opt-in tooling (scalafmt, scalafix, WartRemover, sbt-scoverage) invoke `/code-quality`.
 
 Reference: Odersky et al.'s *Programming in Scala*; official Scala Documentation

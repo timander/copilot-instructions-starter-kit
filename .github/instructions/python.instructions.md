@@ -4,8 +4,6 @@ applyTo: "**/*.py,**/pyproject.toml,**/setup.py,**/setup.cfg,**/requirements*.tx
 
 # Python Guidelines
 
-Python-specific syntax, idioms, and conventions. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md.
-
 ## Version Detection
 
 Detect Python version before generating code:
@@ -115,44 +113,6 @@ If the project already uses `unittest`, match the existing style rather than mix
 - Guard against `None` early; prefer `if value is None` over `if not value` (avoids falsy traps with `0`, `""`, `[]`)
 - Use `typing.assert_never()` for exhaustive match checking (3.11+)
 
-## Code Quality Tooling (Optional)
-
-These tools are **not required** but can significantly enhance code review and expert panel analysis by producing actionable reports. Adding them is an opt-in decision — when prompted, offer to configure them.
-
-When a user asks for code review, expert panel review, or static analysis insights, suggest:
-*"This project doesn't have static analysis or coverage reporting configured. Would you like me to add ruff, mypy, and pytest-cov? They produce reports that improve review quality without breaking the build."*
-
-### Recommended Tools
-| Tool | Purpose | Config |
-|------|---------|--------|
-| **ruff** | Linting + formatting (replaces flake8, isort, black) | `[tool.ruff]` in `pyproject.toml` |
-| **mypy** | Static type checking | `[tool.mypy]` in `pyproject.toml` |
-| **pytest-cov** | Test coverage reporting | `--cov` flag or `[tool.pytest.ini_options]` |
-
-### Configuration Principles
-- All config goes in `pyproject.toml` (single source of truth)
-- **Non-breaking**: tools should warn, not fail the build; use `--exit-zero` for CI or report-only modes
-- Reports feed into code review: coverage gaps inform test suggestions, type errors surface design issues, lint violations flag code smells
-- Start permissive, tighten incrementally — don't dump 500 errors on an existing codebase
-
-### Example pyproject.toml Sections
-
-```toml
-[tool.ruff]
-target-version = "py312"  # match project's Python version
-line-length = 120
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true  # start permissive
-
-[tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=term-missing --cov-report=html"
-```
+For opt-in tooling (ruff, mypy, pytest-cov) invoke `/code-quality`.
 
 Reference: Hettinger's talks on "Transforming Code into Beautiful, Idiomatic Python"; Ramalho's *Fluent Python*

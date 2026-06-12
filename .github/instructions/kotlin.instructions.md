@@ -4,8 +4,6 @@ applyTo: "**/*.kt,**/*.kts"
 
 # Kotlin Guidelines
 
-Kotlin-specific syntax, idioms, and conventions. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md. For Spring-specific Kotlin, see also spring.instructions.md.
-
 ## IDE Preference
 
 Prefer IntelliJ IDEA actions and refactorings over command-line tools when available:
@@ -105,47 +103,6 @@ Detect test framework from build configuration before generating test code:
 - Annotate nullable parameters with `@Nullable` / `@NotNull` when exposing to Java
 - Prefer Kotlin collections internally; convert at Java boundaries when needed
 
-## Code Quality Tooling (Optional)
-
-These tools are **not required** but can significantly enhance code review and expert panel analysis by producing actionable reports. Adding them is an opt-in decision — when prompted, offer to configure them.
-
-When a user asks for code review, expert panel review, or static analysis insights, suggest:
-*"This project doesn't have static analysis or coverage reporting configured. Would you like me to add detekt, ktlint, and Kover? They produce reports that improve review quality without breaking the build."*
-
-### Recommended Tools
-| Tool | Purpose | Config |
-|------|---------|--------|
-| **detekt** | Static analysis + code smell detection | `detekt.yml` or Gradle plugin config |
-| **ktlint** | Code formatting (Kotlin Coding Conventions) | Gradle plugin or CLI |
-| **Kover** | Test coverage reporting (JetBrains official) | Gradle plugin `org.jetbrains.kotlinx.kover` |
-
-### Configuration Principles
-- **Non-breaking**: tools should report, not fail the build; use `ignoreFailures = true` in Gradle
-- Reports feed into code review: coverage gaps inform test suggestions, detekt findings surface design issues
-- Start permissive, tighten incrementally — generate a baseline with `detekt --create-baseline`
-- ktlint enforces official Kotlin conventions; integrate as a formatting step, not a gate
-
-### Example Gradle Configuration
-
-```kotlin
-// build.gradle.kts
-plugins {
-    id("io.gitlab.arturbosch.detekt") version "1.23.+"
-    id("org.jlleitschuh.gradle.ktlint") version "12.+"
-    id("org.jetbrains.kotlinx.kover") version "0.8.+"
-}
-
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom("$projectDir/detekt.yml")
-    ignoreFailures = true  // report only, don't break the build
-}
-
-kover {
-    reports {
-        verify { /* thresholds are advisory, not gates */ }
-    }
-}
-```
+For opt-in tooling (detekt, ktlint, Kover) invoke `/code-quality`.
 
 Reference: Jemerov & Isakova's *Kotlin in Action*; official Kotlin Coding Conventions

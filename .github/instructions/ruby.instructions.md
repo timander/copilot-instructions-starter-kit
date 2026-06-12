@@ -4,8 +4,6 @@ applyTo: "**/*.rb,**/Gemfile,**/*.gemspec,**/Rakefile,**/.rubocop.yml"
 
 # Ruby Guidelines
 
-Ruby-specific syntax, idioms, and conventions. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md.
-
 ## Version Detection
 
 Detect Ruby version before generating code:
@@ -101,39 +99,6 @@ Detect test framework from `Gemfile` before generating test code:
 - One concept per test; Arrange-Act-Assert structure
 - Mock external dependencies; prefer dependency injection over `allow`/`expect` stubs when possible
 
-## Code Quality Tooling (Optional)
-
-These tools are **not required** but can significantly enhance code review and expert panel analysis by producing actionable reports. Adding them is an opt-in decision — when prompted, offer to configure them.
-
-When a user asks for code review, expert panel review, or static analysis insights, suggest:
-*"This project doesn't have static analysis or coverage reporting configured. Would you like me to add RuboCop, SimpleCov, and Sorbet/steep? They produce reports that improve review quality without breaking the build."*
-
-### Recommended Tools
-| Tool | Purpose | Config |
-|------|---------|--------|
-| **RuboCop** | Linting + style enforcement | `.rubocop.yml` |
-| **SimpleCov** | Test coverage reporting | `spec/spec_helper.rb` or `test/test_helper.rb` |
-| **Sorbet** | Gradual static typing | `sorbet/config`, `typed:` sigils |
-
-### Configuration Principles
-- **Non-breaking**: tools should warn, not fail the build; start with `--auto-gen-config` for RuboCop to baseline
-- Reports feed into code review: coverage gaps inform test suggestions, type errors surface design issues, lint violations flag code smells
-- Start permissive, tighten incrementally — don't dump hundreds of offenses on an existing codebase
-- Sorbet is gradual: start with `typed: false`, promote files as types are added
-
-### Example .rubocop.yml Starter
-
-```yaml
-AllCops:
-  TargetRubyVersion: 3.2  # match project's Ruby version
-  NewCops: enable
-  SuggestExtensions: false
-
-Metrics/MethodLength:
-  Max: 20
-
-Style/Documentation:
-  Enabled: false  # code should be self-documenting
-```
+For opt-in tooling (RuboCop, SimpleCov, Sorbet) invoke `/code-quality`.
 
 Reference: Metz's *Practical Object-Oriented Design*; Olsen's *Eloquent Ruby*
