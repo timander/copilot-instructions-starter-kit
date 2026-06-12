@@ -37,6 +37,21 @@ Each iteration: slightly better code, slightly clearer understanding.
 - Questions one at a time: [1 of N], [last question]
 - When I give multiple ideas, confirm which one we're executing
 
+## Audience
+
+Declare per stack. Defaults to `working` when unset. Switch mid-session with `/audience <stack>: <level>`.
+
+- `learning`: precede non-trivial commands with one plain-English sentence on what they do and what they return. No tutorials.
+- `working`: narrate only commands with non-obvious flags or risky semantics.
+- `expert`: skip narration; run and report.
+
+My declared levels:
+- aws: working
+- cdk: working
+- (add more as the kit grows)
+
+Fallback: if no level is declared and the active env is a sandbox account, default that stack to `learning` for the session.
+
 ## README as Source of Truth
 - Read README.md before proposing changes
 - If a change affects project purpose, setup, or constraints, update README
