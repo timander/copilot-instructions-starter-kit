@@ -4,8 +4,6 @@ applyTo: "**/*.ts,**/*.tsx"
 
 # TypeScript Guidelines
 
-TypeScript-specific syntax, idioms, and conventions. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; refactoring in refactoring.instructions.md.
-
 ## Strict Mode
 
 - All TypeScript must pass `strict: true`

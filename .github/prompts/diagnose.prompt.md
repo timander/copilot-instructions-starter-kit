@@ -1,7 +1,6 @@
 ---
 description: Systematic debugging - understand before fixing
 name: diagnose
-agent: fixer
 ---
 
 # Diagnose

@@ -4,8 +4,6 @@ applyTo: "**/*.astro,src/pages/**,src/layouts/**,src/components/**"
 
 # Astro Project Guidelines
 
-Astro-specific conventions and project rules. Design principles are in design.instructions.md; XP workflow in xp.instructions.md; TypeScript conventions in typescript.instructions.md.
-
 ## Project Context
 
 This is an Astro 5.x blog with TinaCMS and MDX. Posts live in `posts/` as `.mdx` files.

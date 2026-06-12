@@ -1,39 +1,24 @@
 ---
-applyTo: "**/*.{java,kt,ts,tsx,js,jsx,py,rb,go,rs,cs,scala,groovy}"
+applyTo: "**/*test*.{java,kt,ts,tsx,js,jsx,py,rb,go,rs,cs,scala,groovy},**/*spec*.{java,kt,ts,tsx,js,jsx,py,rb,go,rs,cs,scala,groovy},**/__tests__/**,**/test/**,**/tests/**,**/spec/**"
 ---
 
-# XP Practices & Workflow
+# Testing Discipline
 
-TDD workflow and testing discipline. Design principles are in design.instructions.md; refactoring in refactoring.instructions.md; code review and expert panel in code-review.instructions.md.
+Auto-loaded only on test files. The full red-green-refactor protocol lives in `/tdd`.
 
-## TDD Workflow
+## Principles
 
-TDD is not about testing. It is a design discipline—thinking in iterative, incremental, evolutionary steps.
+- Test **behavior**, not implementation. A test that breaks during a refactor was testing the wrong thing.
+- **One concept per test.** Multiple asserts on the same object is fine; multiple concepts in one test is not.
+- **Descriptive names** that document behavior. `shouldReturnEmptyList_whenInputIsNull` over `test1`.
+- **Arrange–Act–Assert** structure, with blank lines between phases when it aids reading.
+- **Edge cases**: null, empty, boundary, exhausted iterator, max-size, negative.
+- **Fast.** Mock or fake external dependencies. A slow test suite gets skipped.
+- **Tests are documentation.** A reader should understand the unit by reading its tests.
 
-### The Cycle
-1. **Red**: Write a small, failing test that describes the next behavior you need
-2. **Call your shot**: State what you expect to happen when the test runs
-3. **Run**: Observe what actually happens
-4. **Verify your prediction**: If you were right, continue. If wrong, stop—reassess the problem, re-examine assumptions, think more carefully before proceeding
-5. **Green**: Write the minimum code to make the test pass
-6. **Refactor**: Improve the design without changing behavior. This is where design emerges.
-7. **Repeat**: Each cycle adds a thin slice of capability
+## Discipline
 
-### Discipline
-- Never write production code without a failing test
-- Each test should drive a design decision
-- If you can't write a test, the design needs to change—that's the feedback
-- Small steps: if a step feels big, break it smaller
-- Ask for clarification when uncertain rather than guessing
-- Tests are first-class design artifacts, not afterthoughts
-
-### Testing Principles
-- Test behavior, not implementation
-- One concept per test; multiple asserts on same object OK
-- Descriptive test names that document behavior
-- Arrange-Act-Assert structure
-- Test edge cases: null, empty, boundary values
-- Keep tests fast; mock external dependencies
-- Tests are documentation; make them readable
-
-Reference: Beck's *Test-Driven Development*, Beck's *Extreme Programming Explained*
+- No production code without a failing test.
+- If you can't write a test, the design needs to change — that's the feedback. Don't power through it.
+- If a step feels big, break it smaller.
+- Tests are first-class design artifacts, not afterthoughts. They get refactored too.

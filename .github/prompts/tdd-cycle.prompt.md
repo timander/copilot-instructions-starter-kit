@@ -1,7 +1,6 @@
 ---
 description: Red-Green-Refactor cycle for implementing a feature
 name: tdd
-agent: builder
 ---
 
 # TDD Cycle
