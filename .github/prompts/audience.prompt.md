@@ -5,8 +5,6 @@ name: audience
 
 # Audience Switch
 
-Switch the explanation level for the named stack for the rest of this session.
-
 ## Usage
 
 `/audience <stack>: <level>`

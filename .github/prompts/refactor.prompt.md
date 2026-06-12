@@ -5,15 +5,27 @@ name: refactor
 
 # Refactor
 
-Improve existing code without changing behavior. Pick the catalog move that fits, name it, apply it, run the tests.
-
 ## Before Touching Anything
 
 - **Tests exist?** If yes, run them green first. If no, write characterization tests *before* changing structure.
 - **One change at a time.** Never combine behavior change with structural change in the same step.
 - **Commit between moves.** Small, reversible steps; each commit compiles and passes tests.
 
-## Refactoring Catalog (Fowler)
+## The Move Catalog
+
+> Reach for the smallest move that fits. **Tidy First** moves (Beck) are smaller and often applied during the green-refactor step. **Refactoring Catalog** moves (Fowler) are larger and applied to address named smells. If a Tidy First move would do, take that instead.
+
+### Tidy First (Beck) — small, frequent
+
+| Move | When |
+|---|---|
+| **Guard clauses** | Nested conditionals hide the happy path |
+| **Slide statements** | Related code is scattered |
+| **Split phase** | One function does two distinct things in sequence |
+| **Extract helper** | Block deserves a name |
+| **Rename** | Name lies, hedges, or is generic |
+
+### Refactoring Catalog (Fowler) — larger, smell-driven
 
 Pick the move that matches the smell. Always name it and say *why* it improves the design.
 
@@ -30,19 +42,7 @@ Pick the move that matches the smell. Always name it and say *why* it improves t
 | **Inline Method / Inline Class** | Indirection adds nothing |
 | **Rename** | Name doesn't reveal intent |
 
-Reference: Fowler, *Refactoring* (Ch. 6–12); Kerievsky, *Refactoring to Patterns*.
-
-## Tidy First Moves (Beck)
-
-Smaller than catalog moves. Often enough on their own.
-
-| Move | When |
-|---|---|
-| **Guard clauses** | Nested conditionals hide the happy path |
-| **Slide statements** | Related code is scattered |
-| **Split phase** | One function does two distinct things in sequence |
-| **Extract helper** | Block deserves a name |
-| **Rename** | Name lies, hedges, or is generic |
+Reference: Beck, *Tidy First?*; Fowler, *Refactoring* (Ch. 6–12); Kerievsky, *Refactoring to Patterns*.
 
 ## Working with Legacy Code (Feathers)
 
@@ -68,6 +68,6 @@ Reference: Feathers, *Working Effectively with Legacy Code* (Ch. 4 seams, Ch. 8 
 ## Output Discipline
 
 - For each move: **name it**, show the before/after diff, state the smell it addresses, and confirm tests still pass.
-- Stop when the next planned change is easy. Perfection is the enemy of done.
+- Stop when the next change is easy.
 
 What code should we refactor, and what's the next change we're making it easy for?
