@@ -1,7 +1,6 @@
 ---
 description: Present options with trade-offs for a decision
 name: options
-tools: ['search', 'fetch']
 ---
 
 # Present Options

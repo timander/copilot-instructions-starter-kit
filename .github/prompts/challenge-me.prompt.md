@@ -1,7 +1,6 @@
 ---
 description: Socratic questioning - challenge my assumptions and thinking
 name: challenge
-tools: ['search']
 ---
 
 # Challenge My Thinking
