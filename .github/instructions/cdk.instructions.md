@@ -4,17 +4,17 @@ applyTo: "**/cdk.json,**/cdk.context.json,**/bin/*.ts,**/bin/*.py,**/lib/*-stack
 
 # AWS CDK
 
-CDK v2. TypeScript-primary; Python sometimes. Auto-loaded when CDK project files are present. Builds on `aws.instructions.md` — same identity / region / read-only stance applies.
+CDK v2. TypeScript-primary, Python sometimes. Auto-loaded with CDK files. Builds on `aws.instructions.md`: same identity/region/read-only stance.
 
 ## Stance
 
 - **`cdk deploy` is human-only.** Never run it. Print the command if asked.
-- **`cdk synth` and `cdk diff` go through the project's build tool when one exists.** Check `package.json` scripts, `Makefile`, `pyproject.toml`, or `taskfile.yml` first. Use those wrappers — they encode profile / region / role-assumption / context flags the team already got right. Only call `npx cdk` / `cdk` directly when no wrapper exists.
-- **No edits to `cdk.json` or `cdk.context.json` without explicit user approval.** Context drift is a real source of CI surprises.
+- **`cdk synth` and `cdk diff` go through the project's build tool when one exists.** Check `package.json` scripts, `Makefile`, `pyproject.toml`, `taskfile.yml` first. Wrappers encode profile/region/role-assumption/context flags the team already got right. Call `npx cdk` / `cdk` directly only when no wrapper exists.
+- **No edits to `cdk.json` or `cdk.context.json` without explicit user approval.** Context drift causes CI surprises.
 
 ## Account / Environment Selection
 
-This kit assumes the project uses **context flags** (`-c env=<name>`) backed by mappings in `cdk.json`:
+Assumes the project uses **context flags** (`-c env=<name>`) backed by mappings in `cdk.json`:
 
 ```json
 {
@@ -32,63 +32,63 @@ This kit assumes the project uses **context flags** (`-c env=<name>`) backed by 
 Workflow:
 
 1. Ask which env, or confirm from the user's prompt.
-2. Look up the env in `cdk.json` context. If absent, **stop and ask** — don't guess.
-3. Run AWS identity confirmation (see `aws.instructions.md`) with the resolved profile + region.
-4. Verify the resolved Account matches the env mapping. If mismatch — stop, surface the discrepancy.
+2. Look up env in `cdk.json` context. If absent, **stop and ask** — don't guess.
+3. Run AWS identity confirmation (see `aws.instructions.md`) with resolved profile + region.
+4. Verify resolved Account matches env mapping. On mismatch — stop, surface the discrepancy.
 
-If the project uses a different mechanism (`--profile` flag directly, env vars, wrapper scripts), adapt — but state the mechanism out loud once at the start of the session so the user can correct you.
+If the project uses a different mechanism (`--profile` flag directly, env vars, wrapper scripts), adapt — state the mechanism out loud once at session start so the user can correct you.
 
 ## Bootstrap Verification
 
 Before `cdk synth` or `cdk diff` in a new env this session:
 
-- Check that the `CDKToolkit` stack exists in the target account/region: `aws cloudformation describe-stacks --stack-name CDKToolkit --profile <p> --region <r>` (or via the project wrapper).
-- If missing or stack is in `*_FAILED` state, **stop**. Bootstrap is `cdk bootstrap` — a write — and that's a human action. Print the recommended command and wait.
+- Check `CDKToolkit` stack exists in target account/region: `aws cloudformation describe-stacks --stack-name CDKToolkit --profile <p> --region <r>` (or via project wrapper).
+- If missing or in `*_FAILED` state, **stop**. Bootstrap is `cdk bootstrap` — a write — human action. Print the recommended command and wait.
 
 ## `cdk synth`
 
-- Prefer the project wrapper (`npm run synth:dev`, `make synth-staging`, `task synth -- env=prod`).
+- Prefer project wrapper (`npm run synth:dev`, `make synth-staging`, `task synth -- env=prod`).
 - Direct invocation when no wrapper: `npx cdk synth -c env=<name> --profile <p>` (TS) or `cdk synth -c env=<name> --profile <p>` after `uv run`/`poetry run` (Python).
-- A failing synth is a code/config problem — surface the error, propose the smallest change to make synth pass, do not auto-apply unless it's a one-token fix the user already endorsed.
+- Failing synth = code/config problem. Surface the error, propose smallest change to make synth pass; never auto-apply unless it's a one-token fix the user endorsed.
 
 ## `cdk diff`
 
-- This is the read operation that matters. Always run it before discussing or approving a change.
-- Output discipline: show resource-level changes (`Resources` section), highlight **destructive changes** (replacements, deletes) at the top, summarize IAM/SecurityGroup changes separately — they're the ones that bite.
-- For multi-stack diffs, run per-stack and show one summary table: stack, additions, modifications, destructions.
-- If `cdk diff` shows unintended drift (changes the user didn't expect), **stop and investigate** before suggesting any further action. Drift is the signal, not the noise.
+- The read op that matters. Always run before discussing or approving a change.
+- Output discipline: show resource-level changes (`Resources` section), highlight **destructive changes** (replacements, deletes) at top, summarize IAM/SecurityGroup changes separately — they bite.
+- Multi-stack diffs: run per-stack, show one summary table: stack, additions, modifications, destructions.
+- If `cdk diff` shows unintended drift, **stop and investigate** before suggesting further action. Drift is signal, not noise.
 
 ## Construct Style
 
 - **L2 over L1** for everything common. Reach for `CfnXxx` only when L2 doesn't expose what you need.
-- **L3 (patterns) sparingly** — they hide too much for projects that need to evolve. Acceptable for greenfield prototypes.
-- **One stack per deployable unit.** A "stack" is a deploy boundary; don't conflate it with a "module."
-- **Cross-stack references via explicit `Stack.of(...)` props**, not implicit imports. SSM Parameter Store is acceptable for runtime parameter sharing; CloudFormation exports are acceptable but lock stack topology.
-- **Removal policies are explicit** for stateful resources. `RemovalPolicy.RETAIN` for prod data stores; `DESTROY` only in dev/sandbox. Never silent.
-- **Tags applied at the stack level** with the project's standard taxonomy (Environment, Owner, CostCenter, Project). If the team has a `Tags.of(app).add(...)` helper, use it.
+- **L3 (patterns) sparingly** — hide too much for projects that need to evolve. OK for greenfield prototypes.
+- **One stack per deployable unit.** A "stack" is a deploy boundary, not a "module."
+- **Cross-stack references via explicit `Stack.of(...)` props**, not implicit imports. SSM Parameter Store OK for runtime parameter sharing; CloudFormation exports OK but lock stack topology.
+- **Removal policies explicit** for stateful resources. `RemovalPolicy.RETAIN` for prod data stores; `DESTROY` only in dev/sandbox. Never silent.
+- **Tags applied at stack level** with project's standard taxonomy (Environment, Owner, CostCenter, Project). If team has a `Tags.of(app).add(...)` helper, use it.
 
 ## TypeScript-Specific
 
-- `strict: true` (this comes from `typescript.instructions.md` — flagging because CDK projects often loosen it).
+- `strict: true` (from `typescript.instructions.md` — flagging because CDK projects often loosen it).
 - Construct id is the **first** prop, props object is the **third**. Don't reorder.
 - Prefer `Duration.seconds(n)` / `Duration.minutes(n)` over raw numbers for timeouts and TTLs.
 - Use `Stack.of(this).account` and `Stack.of(this).region` over hardcoded values.
 
 ## Python-Specific
 
-- CDK v2 imports are `aws_cdk` (not `aws_cdk.core` — that was v1).
+- CDK v2 imports: `aws_cdk` (not `aws_cdk.core` — that was v1).
 - Use `from aws_cdk import aws_lambda as _lambda` to avoid shadowing the builtin.
 - Stack construct ids are positional; props are keyword-only. Mind PEP 8 line length on long prop lists — break at commas.
 
 ## Testing
 
 - Use `@aws-cdk/assertions` (`Template.fromStack(stack)`).
-- Cover at least: resources are created with the expected types and counts; IAM policies don't grant `*` on `*`; destructive removal policies are absent from prod-targeted stacks.
-- Snapshot tests are fine as a regression net but should not be the only test — they catch *change*, not *correctness*.
+- Cover at minimum: resources created with expected types/counts; IAM policies don't grant `*` on `*`; destructive removal policies absent from prod-targeted stacks.
+- Snapshot tests OK as a regression net; never the only test — they catch *change*, not *correctness*.
 
 ## Sandbox Note
 
-If env is `sandbox`: still no `cdk deploy` from the AI. But narrate the diff in one sentence ("This will create one Lambda, one log group, and an SQS queue; no IAM changes"). Sandbox is where teammates learn — context helps, walls of text don't.
+If env is `sandbox`: still no `cdk deploy` from AI. Narrate the diff in one sentence ("Creates one Lambda, one log group, one SQS queue; no IAM changes"). Sandbox is where teammates learn — context helps, walls of text don't.
 
 ## Common Failure Modes (fast triage)
 

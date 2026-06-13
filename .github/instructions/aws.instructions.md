@@ -8,44 +8,44 @@ Auto-loaded when AWS-adjacent files are present. For ad-hoc AWS work without the
 
 ## Stance
 
-**Read-only by default.** You are an inspection, troubleshooting, and explanation tool. You are not a hand-on-the-keyboard operator for AWS. Stack definitions live in CDK / SAM / Terraform; drift introduced by manual writes is a real cost the team pays later.
+**Read-only by default.** You are an inspection, troubleshooting, and explanation tool — not a hand-on-the-keyboard operator. Stack definitions live in CDK / SAM / Terraform; drift from manual writes is a real cost the team pays later.
 
-The exceptions, gated by env:
+Exceptions, gated by env:
 
 | Environment | Read | Write |
 |---|---|---|
-| **prod** | Yes | **Never.** Print the command, the user runs it. |
-| **staging** | Yes | **Never.** Print the command, the user runs it. |
-| **dev** | Yes | Only after the user types literal approval. |
-| **sandbox** | Yes | Only after the user types literal approval. |
+| **prod** | Yes | **Never.** Print the command, user runs it. |
+| **staging** | Yes | **Never.** Print the command, user runs it. |
+| **dev** | Yes | Only after user types literal approval. |
+| **sandbox** | Yes | Only after user types literal approval. |
 
 If the user types "go", "yes", "approved", or equivalent after you've stated the exact command, you may run it. Anything ambiguous = no.
 
 ## Identity & Region — Confirm First
 
-Never assume the default profile. Before any AWS CLI work in a session:
+Never assume default profile. Before any AWS CLI work in a session:
 
-1. Ask which profile to use, or confirm the one already in `AWS_PROFILE` / project convention.
-2. Run `aws sts get-caller-identity --profile <name>` and show the **Account**, **UserId**, **Arn**.
-3. Resolve **region** separately — `sts get-caller-identity` does not return it. Check in order: `AWS_REGION` env var, `AWS_DEFAULT_REGION`, `aws configure get region --profile <name>`. Show which one wins.
-4. State the env (prod/staging/dev/sandbox) you've inferred from the account ID or profile name, and ask the user to confirm if uncertain.
+1. Ask which profile, or confirm the one in `AWS_PROFILE` / project convention.
+2. Run `aws sts get-caller-identity --profile <name>`; show **Account**, **UserId**, **Arn**.
+3. Resolve **region** separately — `sts get-caller-identity` does not return it. Check in order: `AWS_REGION` env var, `AWS_DEFAULT_REGION`, `aws configure get region --profile <name>`. Show which wins.
+4. State the env (prod/staging/dev/sandbox) inferred from account ID or profile name. Ask the user to confirm if uncertain.
 
-Repeat the identity check when switching profiles in the same session. Do not silently swap.
+Repeat the identity check when switching profiles in the same session. Never silently swap.
 
 ## SSO / MFA Session Expiry
 
 If a call fails with `ExpiredToken`, `TokenRefreshRequired`, or `UnauthorizedOperation` due to auth:
 
-- **Do not** run `aws sso login` yourself — it's interactive and opens a browser.
+- **Do not** run `aws sso login` yourself — interactive, opens a browser.
 - Print: `Session expired. Run: aws sso login --profile <name>` and wait.
 
 ## Defaults for Every Call
 
 - `--no-cli-pager` — never block on `less`.
 - `--output json` — deterministic, parseable.
-- `--query` — extract just what's needed; don't dump full responses into the chat.
-- Always include `--profile <name>` explicitly. No reliance on shell state.
-- Always include `--region <name>` when the operation is regional, even if the profile has a default. Surfaces region-mismatch bugs early.
+- `--query` — extract just what's needed; don't dump full responses.
+- Always `--profile <name>` explicitly. No reliance on shell state.
+- Always `--region <name>` for regional ops, even if profile has a default. Surfaces region-mismatch bugs early.
 
 ## CloudWatch Logs
 
@@ -58,7 +58,7 @@ Pick by job:
 | Cross-group search / structured query | `aws logs start-query` + `aws logs get-query-results` (CloudWatch Logs Insights) |
 | One-off filter on a known time window | `aws logs filter-log-events --log-group-name <g> --start-time <ms> --filter-pattern '<pat>'` |
 
-For Insights, write the query, show it to the user, run it, paginate `get-query-results` until status is `Complete`. Default time window: last 1 hour.
+For Insights: write the query, show it to the user, run it, paginate `get-query-results` until status is `Complete`. Default window: last 1 hour.
 
 ## Sensitive Reads — Treat with Care
 
@@ -74,13 +74,13 @@ Some reads are expensive in latency, response size, or money:
 - `aws s3 ls s3://<bucket> --recursive` on a large bucket — use `--summarize` + `--page-size`, or prefer CloudWatch Storage metrics for size.
 - `aws ec2 describe-images` without owner/filter — returns the world. Always scope with `--owners self` or known account IDs.
 - `aws logs filter-log-events` without `--start-time` — scans from epoch. Always bound the window.
-- Athena queries — print the query and wait for explicit user "go" even though it's technically a read; it bills.
+- Athena queries — print the query, wait for explicit user "go" even though it's technically a read; it bills.
 
 ## Output Discipline
 
-- Never paste raw JSON over 30 lines into the chat. Summarize, then offer to show full output on request.
-- ARNs in code formatting so the user can copy them. Account IDs in code formatting too.
-- For multi-resource enumerations, show a table (name, id, state, tags-of-interest), not the full payload.
+- Never paste raw JSON over 30 lines. Summarize, then offer full output on request.
+- ARNs in code formatting so the user can copy them. Account IDs too.
+- Multi-resource enumerations: show a table (name, id, state, tags-of-interest), not the full payload.
 
 ## Tags
 
@@ -96,8 +96,8 @@ Don't guess service mechanics. Useful first-pass diagnostics:
 
 ## Audience Awareness
 
-If audience is `learning` or env is sandbox: precede each command with one sentence in plain English explaining what it does and what it will return. No tutorials. One sentence.
+If audience is `learning` or env is sandbox: precede each command with one plain-English sentence: what it does, what it returns. No tutorials. One sentence.
 
-If audience is `expert`: skip the narration; just run and report.
+If audience is `expert`: skip narration; run and report.
 
-Default audience is `working`: narrate only commands with non-obvious flags or risky semantics.
+Default `working`: narrate only commands with non-obvious flags or risky semantics.
