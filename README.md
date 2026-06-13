@@ -2,48 +2,59 @@
 
 A user-level GitHub Copilot CLI kit. Tight always-on context, deep content behind on-demand skills and agents, and a small CLI to activate and manage them across your workstation.
 
-**Read the article:** [Keep Your AI on a Leash](https://timandersen.net/post/copilot-custom-instructions)
+**Read the article:** [Disciplined AI, Harnessed](https://timandersen.net/post/copilot-token-optimized)
+**Predecessor:** [Keep Your AI on a Leash](https://timandersen.net/post/copilot-custom-instructions) — describes the kit at [v1.0](https://github.com/timander/copilot-instructions-starter-kit/tree/v1.0)
 **More writing:** [timandersen.net](https://timandersen.net)
 
 ---
 
 ## Install
 
-### Workstation (GitHub Copilot CLI) — recommended
-
-One-liner:
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/timander/copilot-instructions-starter-kit/main/install.sh | bash
 ```
 
-Or inspect-then-run if you don't want to pipe-bash:
+This clones the kit to `~/.copilot-kit`, sets up `~/.copilot/` symlinks, and writes `~/.copilot-kit/env` for your shell.
+
+Add the env file to your shell profile so the env vars and `PATH` follow into every new shell:
+
+```bash
+echo 'source ~/.copilot-kit/env' >> ~/.zshrc   # or ~/.bashrc
+exec $SHELL
+```
+
+Verify:
+
+```bash
+copilot-kit doctor
+```
+
+That's it. Now turn on what you want:
+
+```bash
+copilot-kit list                       # see what's available
+copilot-kit activate diagnose          # diagnose agent
+copilot-kit activate review            # review skill
+```
+
+### Updating
+
+```bash
+copilot-kit update    # git pull --ff-only inside ~/.copilot-kit
+```
+
+### Don't want to pipe-bash?
+
+Clone first, then run the installer from the clone — `install.sh` detects you're inside the kit and uses that as the install location:
 
 ```bash
 git clone https://github.com/timander/copilot-instructions-starter-kit ~/.copilot-kit
 ~/.copilot-kit/install.sh
 ```
 
-Then add the kit's env file to your shell profile so the env var and `PATH` come along to every new shell:
+### VS Code only (no CLI access)
 
-```bash
-echo 'source ~/.copilot-kit/env' >> ~/.zshrc   # or ~/.bashrc, etc.
-exec $SHELL
-```
-
-That's it. Now activate the pieces you want:
-
-```bash
-copilot-kit list                       # see what's available
-copilot-kit activate diagnose          # turn on the diagnose agent
-copilot-kit activate review            # turn on the review skill
-copilot-kit activate kit-doctor        # turn on the self-audit skill
-copilot-kit doctor                     # verify Copilot CLI can see the kit
-```
-
-### Per-repo (VS Code Copilot)
-
-The original blog-post install pattern — drops the kit into a single project's `.github/` folder:
+If your workstation is locked down to VS Code Copilot, drop the kit's `.github/` folder into a project:
 
 ```bash
 cd your-project
@@ -51,7 +62,7 @@ curl -L https://github.com/timander/copilot-instructions-starter-kit/archive/mai
   | tar -xz --strip-components=1 copilot-instructions-starter-kit-main/.github
 ```
 
-This installs the VS-Code-flavored layout (`.github/copilot-instructions.md`, `.github/instructions/`, `.github/prompts/`, `.github/chatmodes/`). Use this path if you're on a workstation where you can only use VS Code Copilot, not the CLI.
+This installs the per-repo VS-Code-flavored layout. No `copilot-kit` CLI, no workstation-level layered config — use it only when the user-level install isn't possible.
 
 ---
 
@@ -300,10 +311,12 @@ Core commands:
 - **Fetch**: Search and analyze context
 - **Leave it**: Don't chase hallucinations
 
+The v2 evolution: **the right tool for the job, at the right level of context.** Lean instructions auto-load; heavy content sits behind skills; agents are approaches, not personas. AI as a sharper tool — never a sloppy vibe coder.
+
 ---
 
 ## License
 
 MIT — Use it, modify it, share it.
 
-By [Tim Andersen](https://timandersen.net) | [Blog](https://timandersen.net/post/copilot-custom-instructions)
+By [Tim Andersen](https://timandersen.net) | [Blog](https://timandersen.net/post/copilot-token-optimized)
