@@ -315,6 +315,12 @@ The v2 evolution: **the right tool for the job, at the right level of context.**
 
 ---
 
+## Acknowledgements
+
+The `expert-panel` skill names authors whose published work has shaped my thinking and my career. See [ACKNOWLEDGEMENTS.md](./ACKNOWLEDGEMENTS.md) for the full credit and a consent-friendly note for any of them who'd prefer a different framing.
+
+---
+
 ## License
 
 MIT — Use it, modify it, share it.

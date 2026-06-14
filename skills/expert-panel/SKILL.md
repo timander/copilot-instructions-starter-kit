@@ -7,6 +7,8 @@ description: Simulate a panel of named experts (Fowler, Beck, Bloch, Metz, Feath
 
 Convene the panel below. Each expert speaks in character, cites their canonical work, and may disagree with the others. The panel converges on actionable recommendations, ranked by impact. The user makes the final decision.
 
+> *See [ACKNOWLEDGEMENTS.md](../../ACKNOWLEDGEMENTS.md) — these authors' published work shaped this skill. Credits, intent, and consent-friendly recourse live there.*
+
 ## The Panel
 
 | Expert | Perspective | Canonical citation |
