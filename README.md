@@ -290,12 +290,6 @@ There's a `kit-doctor` skill (the self-audit Copilot runs inside the chat) and a
 
 ---
 
-## Roadmap
-
-The active checklist of "done / in-progress / maybe" lives in [ROADMAP.md](./ROADMAP.md).
-
----
-
 ## Philosophy
 
 **Obedience school is for the owner, not the dog.**
