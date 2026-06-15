@@ -4,8 +4,8 @@
 #
 # Commands:
 #   list [agents|skills|instructions|all]   List items (default: all)
-#   activate <name>                         Symlink an item so Copilot CLI sees it
-#   deactivate <name>                       Remove the activation symlink
+#   activate <name>                         Make an item visible to Copilot CLI (symlink on Unix, copy on Windows)
+#   deactivate <name>                       Remove the activation
 #   discard <name>                          Permanently delete the source from the kit
 #   add <path> [--type=...]                 Bring an artifact into the kit
 #   doctor                                  Verify install integrity
@@ -29,6 +29,43 @@ fail()    { printf "✗ %s\n" "$*" >&2; exit 1; }
 ok()      { printf "✓ %s\n" "$*"; }
 note()    { printf "→ %s\n" "$*"; }
 
+# Windows (Git Bash, MSYS, Cygwin) silently deep-copies on `ln -s`, breaking
+# symlink-based activation. On Windows we use `cp -R` instead — activated items
+# are copies, not links, so they don't auto-update when the kit changes.
+is_windows() {
+  case "${OSTYPE:-}" in msys*|cygwin*) return 0 ;; esac
+  case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; esac
+  return 1
+}
+
+link_or_copy() {
+  local src="$1" dst="$2"
+  if is_windows; then
+    cp -R "${src}" "${dst}"
+  else
+    ln -s "${src}" "${dst}"
+  fi
+}
+
+# Returns 0 if an activation exists at `path`.
+# Unix: must be a symlink. Windows: any file/dir at that path counts.
+activation_exists() {
+  local path="$1"
+  if is_windows; then [[ -e "${path}" ]]; else [[ -L "${path}" ]]; fi
+}
+
+# Remove an activation (symlink on Unix, file/dir tree on Windows).
+remove_activation() {
+  local path="$1"
+  if is_windows; then
+    if [[ -d "${path}" ]]; then rm -rf "${path}"
+    elif [[ -e "${path}" ]]; then rm "${path}"
+    fi
+  else
+    [[ -L "${path}" ]] && rm "${path}"
+  fi
+}
+
 require_kit() {
   [[ -d "${KIT_DIR}" ]] || fail "kit not found at ${KIT_DIR}. Run install.sh first."
 }
@@ -48,8 +85,8 @@ classify() {
 is_active() {
   local name="$1" type="$2"
   case "${type}" in
-    agent)       [[ -L "${COPILOT_DIR}/agents/${name}.agent.md" ]] ;;
-    skill)       [[ -L "${COPILOT_DIR}/skills/${name}" ]] ;;
+    agent)       activation_exists "${COPILOT_DIR}/agents/${name}.agent.md" ;;
+    skill)       activation_exists "${COPILOT_DIR}/skills/${name}" ;;
     instruction) [[ -f "${KIT_DIR}/.github/instructions/${name}.instructions.md" ]] ;;
     *) return 1 ;;
   esac
@@ -121,12 +158,12 @@ cmd_activate() {
       mkdir -p "${COPILOT_DIR}/agents"
       local src="${KIT_DIR}/agents/${name}.agent.md"
       local dst="${COPILOT_DIR}/agents/${name}.agent.md"
-      if [[ -L "${dst}" ]]; then
+      if activation_exists "${dst}"; then
         ok "agent '${name}' already active"
       elif [[ -e "${dst}" ]]; then
-        fail "${dst} exists and is not a symlink — refusing to overwrite"
+        fail "${dst} exists and was not activated by the kit — refusing to overwrite"
       else
-        ln -s "${src}" "${dst}"
+        link_or_copy "${src}" "${dst}"
         ok "activated agent: ${name}"
       fi
       ;;
@@ -134,12 +171,12 @@ cmd_activate() {
       mkdir -p "${COPILOT_DIR}/skills"
       local src="${KIT_DIR}/skills/${name}"
       local dst="${COPILOT_DIR}/skills/${name}"
-      if [[ -L "${dst}" ]]; then
+      if activation_exists "${dst}"; then
         ok "skill '${name}' already active"
       elif [[ -e "${dst}" ]]; then
-        fail "${dst} exists and is not a symlink — refusing to overwrite"
+        fail "${dst} exists and was not activated by the kit — refusing to overwrite"
       else
-        ln -s "${src}" "${dst}"
+        link_or_copy "${src}" "${dst}"
         ok "activated skill: ${name}"
       fi
       ;;
@@ -170,8 +207,8 @@ cmd_deactivate() {
   case "${type}" in
     agent)
       local dst="${COPILOT_DIR}/agents/${name}.agent.md"
-      if [[ -L "${dst}" ]]; then
-        rm "${dst}"
+      if activation_exists "${dst}"; then
+        remove_activation "${dst}"
         ok "deactivated agent: ${name}"
       else
         ok "agent '${name}' was not active"
@@ -179,8 +216,8 @@ cmd_deactivate() {
       ;;
     skill)
       local dst="${COPILOT_DIR}/skills/${name}"
-      if [[ -L "${dst}" ]]; then
-        rm "${dst}"
+      if activation_exists "${dst}"; then
+        remove_activation "${dst}"
         ok "deactivated skill: ${name}"
       else
         ok "skill '${name}' was not active"
@@ -305,13 +342,28 @@ cmd_doctor() {
     issues=$((issues+1))
   fi
 
-  # Symlinks
+  # copilot-instructions.md placement (symlink on Unix, copy on Windows)
   local link="${COPILOT_DIR}/copilot-instructions.md"
-  if [[ -L "${link}" && "$(readlink "${link}")" == "${KIT_DIR}/copilot-instructions.md" ]]; then
-    ok "${link} → kit's copilot-instructions.md"
+  local target="${KIT_DIR}/copilot-instructions.md"
+  if is_windows; then
+    if [[ -f "${link}" ]] && cmp -s "${link}" "${target}"; then
+      ok "${link} matches kit's copilot-instructions.md"
+    else
+      printf "%s %s is missing or differs from the kit (re-run install.sh)\n" "$(c_red '✗')" "${link}"
+      issues=$((issues+1))
+    fi
   else
-    printf "%s ${link} is missing or not pointing at the kit\n" "$(c_red '✗')"
-    issues=$((issues+1))
+    if [[ -L "${link}" && "$(readlink "${link}")" == "${target}" ]]; then
+      if [[ -e "${target}" ]]; then
+        ok "${link} → kit's copilot-instructions.md"
+      else
+        printf "%s %s points at %s, but target does not exist (dangling)\n" "$(c_red '✗')" "${link}" "${target}"
+        issues=$((issues+1))
+      fi
+    else
+      printf "%s %s is missing or not pointing at the kit\n" "$(c_red '✗')" "${link}"
+      issues=$((issues+1))
+    fi
   fi
 
   # Copilot CLI present?
@@ -349,13 +401,13 @@ cmd_which() {
       echo "type:    agent"
       echo "source:  ${KIT_DIR}/agents/${name}.agent.md"
       local dst="${COPILOT_DIR}/agents/${name}.agent.md"
-      [[ -L "${dst}" ]] && echo "active:  ${dst}" || echo "active:  (not activated)"
+      activation_exists "${dst}" && echo "active:  ${dst}" || echo "active:  (not activated)"
       ;;
     skill)
       echo "type:    skill"
       echo "source:  ${KIT_DIR}/skills/${name}/"
       local dst="${COPILOT_DIR}/skills/${name}"
-      [[ -L "${dst}" ]] && echo "active:  ${dst}" || echo "active:  (not activated)"
+      activation_exists "${dst}" && echo "active:  ${dst}" || echo "active:  (not activated)"
       ;;
     instruction)
       echo "type:    instruction"

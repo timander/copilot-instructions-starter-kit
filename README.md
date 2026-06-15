@@ -54,12 +54,15 @@ git clone https://github.com/timander/copilot-instructions-starter-kit ~/.copilo
 
 ### VS Code only (no CLI access)
 
-If your workstation is locked down to VS Code Copilot, drop the kit's `.github/` folder into a project:
+If your workstation is locked down to VS Code Copilot, drop the kit's `.github/` folder and `copilot-instructions.md` into a project:
 
 ```bash
 cd your-project
 curl -L https://github.com/timander/copilot-instructions-starter-kit/archive/main.tar.gz \
-  | tar -xz --strip-components=1 copilot-instructions-starter-kit-main/.github
+  | tar -xz --strip-components=1 \
+      copilot-instructions-starter-kit-main/.github \
+      copilot-instructions-starter-kit-main/copilot-instructions.md
+mv copilot-instructions.md .github/copilot-instructions.md
 ```
 
 This installs the per-repo VS-Code-flavored layout. No `copilot-kit` CLI, no workstation-level layered config — use it only when the user-level install isn't possible.
@@ -183,7 +186,6 @@ The kit's source layout (what you clone):
 │   └── kit-doctor/SKILL.md               # Self-audit (token cost, drift, gaps)
 │
 └── .github/
-    ├── copilot-instructions.md           # VS Code per-repo always-on (parallel to root file)
     ├── instructions/                     # *.instructions.md (loaded by CLI + VS Code)
     │   ├── design.instructions.md        # Quality spectrum, smells, simplicity
     │   ├── refactoring.instructions.md   # Evolutionary stance + safety

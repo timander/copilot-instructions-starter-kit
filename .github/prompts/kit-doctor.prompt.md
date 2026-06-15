@@ -13,7 +13,7 @@ This kit pays a token tax on every Copilot turn. Keep it honest. Treat the kit l
 
 ## Checks
 
-- **Token cost.** Run `wc -c .github/copilot-instructions.md .github/instructions/*.md .github/prompts/*.md .github/chatmodes/*.md`. Convert with `bytes ÷ 4`. Build a steady-state cost matrix for: Plain TS, Plain Java, Spring Java, Python, CDK TS, Test file, Astro page, Chat-only.
+- **Token cost.** Run `wc -c copilot-instructions.md .github/instructions/*.md .github/prompts/*.md .github/chatmodes/*.md`. Convert with `bytes ÷ 4`. Build a steady-state cost matrix for: Plain TS, Plain Java, Spring Java, Python, CDK TS, Test file, Astro page, Chat-only.
 - **Auto-load budget.** Flag any instruction file over **1,800 tok** that's matched by any reasonable `applyTo`.
 - **Scenario budget.** Flag any scenario over **6,000 tok** of background context.
 - **Duplication.** Grep for repeated section headings across instruction files. Quote both occurrences when flagging.

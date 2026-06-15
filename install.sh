@@ -7,7 +7,7 @@
 # What it does:
 #   1. Clones the kit to ~/.copilot-kit (skips if already present)
 #   2. Creates ~/.copilot/agents/ and ~/.copilot/skills/ (if missing)
-#   3. Symlinks ~/.copilot/copilot-instructions.md to the kit's file
+#   3. Places ~/.copilot/copilot-instructions.md (symlink on Unix, copy on Windows)
 #   4. Writes ~/.copilot-kit/env with COPILOT_CUSTOM_INSTRUCTIONS_DIRS + PATH
 #   5. Prints instructions to source the env file from your shell profile
 #
@@ -25,6 +25,24 @@ note()  { printf "→ %s\n" "$*"; }
 warn()  { printf "⚠ %s\n" "$*" >&2; }
 ok()    { printf "✓ %s\n" "$*"; }
 fail()  { printf "✗ %s\n" "$*" >&2; exit 1; }
+
+# Windows (Git Bash, MSYS, Cygwin) silently deep-copies on `ln -s` by default
+# (winsymlinks:deepcopy), which breaks our readlink-based "already linked"
+# checks. On Windows we use `cp` directly — explicit and consistent.
+is_windows() {
+  case "${OSTYPE:-}" in msys*|cygwin*) return 0 ;; esac
+  case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; esac
+  return 1
+}
+
+already_in_place() {
+  local link="$1" target="$2"
+  if is_windows; then
+    [[ -f "${link}" ]] && cmp -s "${link}" "${target}"
+  else
+    [[ -L "${link}" && "$(readlink "${link}")" == "${target}" ]]
+  fi
+}
 
 # --- 1. Clone (or detect existing) -------------------------------------------
 
@@ -46,17 +64,26 @@ fi
 mkdir -p "${COPILOT_DIR}/agents" "${COPILOT_DIR}/skills"
 ok "ensured ${COPILOT_DIR}/agents and ${COPILOT_DIR}/skills"
 
-# --- 3. Symlink copilot-instructions.md --------------------------------------
+# --- 3. Place copilot-instructions.md ----------------------------------------
+# Unix: symlink. Windows: cp (see is_windows comment above).
 
 LINK="${COPILOT_DIR}/copilot-instructions.md"
 TARGET="${KIT_DIR}/copilot-instructions.md"
 
-if [[ -L "${LINK}" && "$(readlink "${LINK}")" == "${TARGET}" ]]; then
-  ok "copilot-instructions.md already symlinked"
+if already_in_place "${LINK}" "${TARGET}"; then
+  ok "copilot-instructions.md already in place"
 elif [[ -e "${LINK}" ]]; then
-  warn "${LINK} exists and is not the kit's symlink"
-  warn "back it up and re-run, or symlink manually:"
-  warn "  ln -sf ${TARGET} ${LINK}"
+  warn "${LINK} exists and differs from the kit's version"
+  warn "back it up and re-run, or replace manually:"
+  if is_windows; then
+    warn "  cp '${TARGET}' '${LINK}'"
+  else
+    warn "  ln -sf '${TARGET}' '${LINK}'"
+  fi
+elif is_windows; then
+  cp "${TARGET}" "${LINK}"
+  ok "copied ${TARGET} → ${LINK}"
+  note "Windows: re-run install.sh after 'copilot-kit update' to refresh"
 else
   ln -s "${TARGET}" "${LINK}"
   ok "symlinked ${LINK} → ${TARGET}"
